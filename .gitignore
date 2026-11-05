@@ -218,3 +218,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Private collections
+data/rkd_example.xml
+
+prototype.ipynb
