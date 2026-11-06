@@ -1,5 +1,5 @@
 [project]
-name = "faces-io"
+name = "facesIO"
 version = "0.1.0"
 description = ""
 authors = [
@@ -12,7 +12,7 @@ dependencies = [
 ]
 
 [tool.poetry]
-packages = [{include = "faces_io", from = "src"}]
+packages = [{include = "facesIO", from = "src"}]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
