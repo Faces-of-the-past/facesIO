@@ -4,11 +4,11 @@ Each museum / archive gets its own `Collection` subclass, responsible for
 parsing that source's native format into a list of common `Artwork` objects.
 """
 
-from abc import ABC, abstractmethod
-from rdflib import Graph
-from dataclasses import dataclass
-from typing import List
 import xml.etree.ElementTree as ET
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
+from rdflib import Graph
 
 PRADO_SOURCE = "data/prado_example.rdf"
 RKD_SOURCE = "data/rkd_example.xml"
@@ -37,8 +37,8 @@ class Artwork(ABC):
     id: str
     source: str
     medium: str
-    images: List[str]
-    sitter_ids: List[str]
+    images: list[str]
+    sitter_ids: list[str]
     extra: dict
 
 @dataclass
@@ -57,7 +57,7 @@ class Collection(ABC):
     """
 
     raw: str
-    artworks: List[Artwork]
+    artworks: list[Artwork]
 
     # The methods below deliberately do NOTHING. Their ONLY functionality is to fail
     # if not implemented by an underlying class.
@@ -68,7 +68,7 @@ class Collection(ABC):
         """
 
     @abstractmethod
-    def read_from_file(self, path) -> List[Artwork]:
+    def read_from_file(self, path) -> list[Artwork]:
         """Parse a source file into a list of artworks.
 
         Parameters
@@ -100,7 +100,7 @@ class PradoCollection(Collection):
         g = Graph()
         return g.parse(self.raw, format="xml")
 
-    def read_from_file(self, path=PRADO_SOURCE) -> List[Artwork]:
+    def read_from_file(self, path=PRADO_SOURCE) -> list[Artwork]:
         """Parse a Prado RDF file into a list of artworks.
 
         Parameters
@@ -133,7 +133,7 @@ class RKDCollection(Collection):
     def import_raw(self):
         return ET.parse(self.raw)
 
-    def read_from_file(self, path=RKD_SOURCE) -> List[Artwork]:
+    def read_from_file(self, path=RKD_SOURCE) -> list[Artwork]:
         """Parse an RKD XML file into a list of artworks.
 
         Parameters
