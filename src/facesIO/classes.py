@@ -5,8 +5,10 @@ parsing that source's native format into a list of common `Artwork` objects.
 """
 
 from abc import ABC, abstractmethod
+from rdflib import Graph
 from dataclasses import dataclass
 from typing import List
+import xml.etree.ElementTree as ET
 
 PRADO_SOURCE = "data/prado_example.rdf"
 RKD_SOURCE = "data/rkd_example.xml"
@@ -39,7 +41,6 @@ class Artwork(ABC):
     sitter_ids: List[str]
     extra: dict
 
-
 @dataclass
 class Collection(ABC):
     """Abstract base for a collection of artworks read from a single source.
@@ -48,11 +49,23 @@ class Collection(ABC):
 
     Attributes
     ----------
+    raw      : str
+        The raw file containing all the collection information. We keep it here
+        as a reference, in case we need further information down the line.
     artworks : List[Artwork]
         Artworks contained in the collection.
     """
 
+    raw: str
     artworks: List[Artwork]
+
+    # The methods below deliberately do NOTHING. Their ONLY functionality is to fail
+    # if not implemented by an underlying class.
+
+    @abstractmethod
+    def import_raw(self):
+        """ Import the whole raw file
+        """
 
     @abstractmethod
     def read_from_file(self, path) -> List[Artwork]:
@@ -68,7 +81,6 @@ class Collection(ABC):
         List[Artwork]
             Artworks found in the file.
         """
-        # Yes, this does NOTHING. The ONLY functionality is to fail if not implemented by a lower class.
 
 
 class PradoCollection(Collection):
@@ -81,7 +93,12 @@ class PradoCollection(Collection):
     """
 
     def __init__(self, path=PRADO_SOURCE):
+        self.raw = path
         self.artworks = self.read_from_file(path)
+
+    def import_raw(self):
+        g = Graph()
+        return g.parse(self.raw, format="xml")
 
     def read_from_file(self, path=PRADO_SOURCE) -> List[Artwork]:
         """Parse a Prado RDF file into a list of artworks.
@@ -97,8 +114,8 @@ class PradoCollection(Collection):
             Artworks found in the file.
 
         """
-        return "Parsed from Prado" # TODO: not implemented yet
-
+        print("Parsing from Prado")
+        return self.import_raw() # TODO: parse the raw data into an Artwork object
 
 class RKDCollection(Collection):
     """Collection of artworks from the RKD (Netherlands Institute for Art History, XML format).
@@ -110,7 +127,11 @@ class RKDCollection(Collection):
     """
 
     def __init__(self, path=RKD_SOURCE):
+        self.raw = path
         self.artworks = self.read_from_file(path)
+
+    def import_raw(self):
+        return ET.parse(self.raw)
 
     def read_from_file(self, path=RKD_SOURCE) -> List[Artwork]:
         """Parse an RKD XML file into a list of artworks.
@@ -125,4 +146,5 @@ class RKDCollection(Collection):
         List[Artwork]
             Artworks found in the file.
         """
-        return "Parsed from RKD" # TODO: not implemented yet
+        print("Parsing from RKD")
+        return self.import_raw() # TODO: parse the raw data into an Artwork object
