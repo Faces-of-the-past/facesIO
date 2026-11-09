@@ -9,7 +9,7 @@ def test_artwork_stores_fields():
     """An Artwork keeps the values it was built with."""
     artwork = Artwork(
         id="P000001",
-        source="Prado",
+        museum="Prado",
         medium="oil on canvas",
         images=["https://example.org/img.jpg"],
         sitter_ids=["sitter-1"],

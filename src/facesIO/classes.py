@@ -22,7 +22,7 @@ class Artwork(ABC):
     ----------
     id : str
         Identifier of the artwork. TODO: within the source, or global?
-    source : str
+    museum : str
         Name of the collection the artwork comes from (e.g. ``"Prado"``).
     medium : str
         Material / technique (e.g. ``"oil on canvas"``). TODO: controlled vocabulary?
@@ -35,7 +35,7 @@ class Artwork(ABC):
     """
 
     id: str
-    source: str
+    museum: str
     medium: str
     images: list[str]
     sitter_ids: list[str]
