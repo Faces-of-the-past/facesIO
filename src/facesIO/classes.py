@@ -39,13 +39,13 @@ class Artwork(ABC):
     medium: str
     images: list[str]
     sitter_ids: list[str]
-    extra: dict
+    extra: dict #TODO: consider directly pointing to the raw source file instead
 
 @dataclass
 class Collection(ABC):
     """Abstract base for a collection of artworks read from a single source.
 
-    Subclasses must implement `read_from_file`.
+    Subclasses must implement `read_from_file` and `import_raw`.
 
     Attributes
     ----------
@@ -65,6 +65,8 @@ class Collection(ABC):
     @abstractmethod
     def import_raw(self):
         """ Import the whole raw file
+        # TODO: consider turning this and its implementations into static methods.
+        # We might reuse them inside of Artwork to retrieve the extra information from file.
         """
 
     @abstractmethod
