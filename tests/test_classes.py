@@ -1,6 +1,7 @@
 """Tests for `facesIO.classes`."""
 import pytest
 from facesIO.classes import Artwork, Collection, PradoCollection, RKDCollection
+from tests.conftest import IN_GITHUB_ACTIONS
 
 
 # --- Artwork -----------------------------------------------------------------
@@ -38,6 +39,7 @@ def test_init_prado_collection(): # TODO: remove when parser gets implemented
     nodes = all_data.all_nodes()
     assert len(nodes) == 1662 # Checks that the right file is being read
 
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
 def test_init_rkd_collection(): # TODO: remove when parser gets implemented
     collection = RKDCollection() # Load from example file
     tree = collection.import_raw()
