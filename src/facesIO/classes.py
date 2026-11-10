@@ -27,10 +27,14 @@ class Artwork(ABC):
     ----------
     id : str
         Identifier of the artwork. TODO: within the source, or global?
+    title : str
+        Artwork title.
+    title : str
+        Artwork author.
     museum : str
-        Name of the collection the artwork comes from (e.g. ``"Prado"``).
+        Name of the collection the artwork comes from (e.g. "Prado").
     medium : str
-        Material / technique (e.g. ``"oil on canvas"``). TODO: controlled vocabulary?
+        Material / technique (e.g. "oil on canvas"). TODO: controlled vocabulary?
     images : List[str]
         URLs or paths to images of the artwork.
     sitter_ids : List[str]
@@ -40,11 +44,13 @@ class Artwork(ABC):
     """
 
     id: str
-    museum: str
-    medium: str
-    images: list[str]
-    sitter_ids: list[str]
-    extra: dict #TODO: consider directly pointing to the raw source file instead
+    title: str = None
+    author: str = None
+    museum: str = None
+    medium: str = None
+    images: list[str] = None
+    sitter_ids: list[str] = None
+    extra: dict = None #TODO: consider directly pointing to the raw source file instead
 
 @dataclass
 class Collection(ABC):

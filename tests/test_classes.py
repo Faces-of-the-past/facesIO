@@ -11,14 +11,15 @@ def test_artwork_stores_fields():
     artwork = Artwork(
         id="P000001",
         museum="Prado",
+        title="Las Meninas",
+        author="Diego Velázquez",
         medium="oil on canvas",
         images=["https://example.org/img.jpg"],
         sitter_ids=["sitter-1"],
-        extra={},
     )
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
-
+    assert artwork.extra == None
 
 # --- Collection (abstract) ---------------------------------------------------
 
