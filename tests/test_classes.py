@@ -59,14 +59,13 @@ def test_prado_returns_artworks(prado_path):
     assert collection.artworks
     assert all(isinstance(a, Artwork) for a in collection.artworks)
 
-
-@pytest.mark.xfail(reason="Parser not implemented yet")
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
 def test_rkd_returns_artworks(rkd_path):
     """Parsing the RKD example yields a non-empty list of Artworks."""
     collection = RKDCollection(rkd_path)
     assert isinstance(collection.artworks, list)
-    assert collection.artworks
     assert all(isinstance(a, Artwork) for a in collection.artworks)
+
 
 @pytest.mark.skip(reason="TODO: pick a known artwork from the example file")
 def test_prado_parses_known_artwork(prado_path):
@@ -74,7 +73,16 @@ def test_prado_parses_known_artwork(prado_path):
     ...
 
 
-@pytest.mark.skip(reason="TODO: pick a known artwork from the example file")
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
 def test_rkd_parses_known_artwork(rkd_path):
     """A specific artwork in the example file is parsed with the expected fields."""
-    ...
+    collection = RKDCollection(rkd_path)
+    artworks = collection.artworks
+    assert len(artworks) == 21
+    artwork = artworks[0]
+    assert artwork.id == "5"
+    assert artwork.artists == [('Dyck, Anthony van', 'huidig')]
+    assert artwork.title == "Portret van koningin Henriëtta Maria de Bourbon, koningin van Engeland (1609-1669)"
+    assert artwork.museum == "RKD"
+    assert artwork.images == ['0000146491.jp2', 'ONS9400117.jp2']
+    assert artwork.raw == rkd_path
