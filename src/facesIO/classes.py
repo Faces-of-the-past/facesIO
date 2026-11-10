@@ -74,6 +74,10 @@ class Collection(ABC):
     raw: str
     artworks: list[Artwork]
 
+    def __iter__(self):
+        """ Allows using the collection as an iterable """
+        yield from self.artworks
+
     # The methods below deliberately do NOTHING. Their ONLY functionality is to fail
     # if not implemented by an underlying class.
 
