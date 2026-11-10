@@ -52,6 +52,10 @@ class Artwork(ABC):
     sitter_ids: list[str] = None
     raw: str = None
 
+    def __str__(self) -> str:
+        """ Human-friendly name """
+        return "{museum}-{id} : {title}".format(museum=self.museum, id=self.id, title=self.title)
+
 @dataclass
 class Collection(ABC):
     """Abstract base for a collection of artworks read from a single source.
@@ -77,6 +81,7 @@ class Collection(ABC):
     def import_raw(self):
         """ Import the whole raw file
         # TODO: consider turning this and its implementations into static methods.
+        # TODO: consider removing.
         # We might reuse them inside of Artwork to retrieve the extra information from file.
         """
 
