@@ -29,8 +29,8 @@ class Artwork(ABC):
         Identifier of the artwork. TODO: within the source, or global?
     title : str
         Artwork title.
-    title : str
-        Artwork author.
+    artists : List[str]
+        Artwork author(s).
     museum : str
         Name of the collection the artwork comes from (e.g. "Prado").
     medium : str
@@ -45,12 +45,12 @@ class Artwork(ABC):
 
     id: str
     title: str = None
-    author: str = None
+    artists: str = None
     museum: str = None
     medium: str = None
     images: list[str] = None
     sitter_ids: list[str] = None
-    extra: dict = None #TODO: consider directly pointing to the raw source file instead
+    raw: str = None
 
 @dataclass
 class Collection(ABC):
@@ -159,5 +159,14 @@ class RKDCollection(Collection):
         List[Artwork]
             Artworks found in the file.
         """
-        print("Parsing from RKD")
-        return self.import_raw() # TODO: parse the raw data into an Artwork object
+        tree = ET.parse(path)
+        artworks = [Artwork(id=record.get("priref"), # We can use get because priref is an attribute
+                            title=record.findtext("benaming_kunstwerk"),
+                            artists=[(t.findtext("naam"), t.findtext("status")) for t in record.findall("toeschrijving")],
+                            museum="RKD",
+                            images=[m.findtext("media.reference_number") for m in record.findall("media")],
+                            sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")],
+                            raw=path)
+                    for record in tree.iter('record')]
+
+        return artworks
