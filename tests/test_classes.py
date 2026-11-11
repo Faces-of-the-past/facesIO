@@ -48,6 +48,7 @@ def test_rkd_parses_known_artwork(rkd_path):
     assert artwork.title == "Portret van koningin Henriëtta Maria de Bourbon, koningin van Engeland (1609-1669)"
     assert artwork.museum == "RKD"
     assert artwork.images == ['0000146491.jp2', 'ONS9400117.jp2']
+    assert artwork.raw == str(rkd_path)
 
 
 @pytest.mark.xfail(reason="Parser not implemented yet")
