@@ -8,18 +8,22 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "jupyter (>=1.1.1,<2.0.0)",
     "pandas (>=3.1.1,<4.0.0)",
     "lxml (>=6.1.3,<7.0.0)",
     "rdflib (>=7.6.0,<8.0.0)",
-    "pytest (>=9.2.0,<10.0.0)",
-    "ipython (>=9.18.1,<10.0.0)",
-    "pylint (>=4.1.3,<5.0.0)",
-    "pytest-cov (>=7.1.0,<8.0.0)",
 ]
 
 [tool.poetry]
 packages = [{include = "facesIO", from = "src"}]
+
+# Tools for developing the package (testing, linting, notebooks).
+# Installed by `poetry install`, but not required by users of the package.
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.2.0,<10.0.0"
+pytest-cov = ">=7.1.0,<8.0.0"
+pylint = ">=4.1.3,<5.0.0"
+jupyter = ">=1.1.1,<2.0.0"
+ipython = ">=9.18.1,<10.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
