@@ -2,32 +2,22 @@
 import pytest
 from facesIO.classes import Artwork, ArtworkRKD, Collection
 from src.facesIO.classes import RKD_SOURCE
-from tests.conftest import IN_GITHUB_ACTIONS, rkd_path
+from tests.conftest import IN_GITHUB_ACTIONS, EXAMPLE_JSONL_LINE, example_artwork, rkd_path
 
 
 # --- Artwork -----------------------------------------------------------------
-EXAMPLE_JSONL_LINE = '{"id": "P000001", "title": "Las Meninas", "artists": "Diego Velázquez", "museum": "Prado", "medium": "oil on canvas", "images": ["https://example.org/img.jpg"], "sitter_ids": ["sitter-1"], "raw": null}'
-
-artwork = Artwork(
-    id="P000001",
-    museum="Prado",
-    title="Las Meninas",
-    artists="Diego Velázquez",
-    medium="oil on canvas",
-    images=["https://example.org/img.jpg"],
-    sitter_ids=["sitter-1"],
-)
-
-def test_artwork_stores_fields():
+def test_artwork_stores_fields(example_artwork):
     """An Artwork keeps the values it was built with."""
+    artwork = example_artwork
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
     assert artwork.raw == None
 
-def test_artwork_as_jsonl_line():
+def test_artwork_as_jsonl_line(example_artwork):
     """An Artwork gets properly exported"""
+    artwork = example_artwork
     assert isinstance(artwork.as_dict(), dict)
-    artwork.as_jsonl_line() == EXAMPLE_JSONL_LINE
+    assert artwork.as_jsonl_line() == EXAMPLE_JSONL_LINE
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
     assert artwork.raw == None

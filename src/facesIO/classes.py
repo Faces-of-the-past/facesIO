@@ -64,7 +64,7 @@ class Artwork(ABC):
 
     def as_jsonl_line(self) -> str:
         """ Returns the artwork as a line ready to be appended to a jsonl file"""
-        return json.dumps(asdict(self), ensure_ascii=False)
+        return json.dumps(asdict(self), ensure_ascii=False) + '\n'
 
     @classmethod # Like staticmethod, but inheritable
     def from_jsonl_line(cls, line: str) -> Self:
@@ -85,6 +85,7 @@ class ArtworkRKD(Artwork):
 
 @dataclass
 class ArtworkPrado(Artwork):
+    
     def __init__(self, record) -> Artwork:
         self.id = "TODO:"
         self.title = "Soon we'll implement a Prado parser"
@@ -122,3 +123,10 @@ class Collection(ABC):
     def __iter__(self):
         """ Allows using the collection as an iterable """
         yield from self.artworks
+
+    def as_jsonl(self, file):
+        """ Represent the collection as a jsonl file """
+        lines = [artwork.as_jsonl_line() for artwork in self.artworks]
+
+        with open(file, 'w') as f:
+            [f.write(line) for line in lines]
