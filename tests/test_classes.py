@@ -1,4 +1,6 @@
 """Tests for `facesIO.classes`."""
+from dataclasses import replace
+
 import pytest
 from facesIO.classes import Artwork, ArtworkRKD, Collection
 from tests.conftest import IN_GITHUB_ACTIONS, EXAMPLE_JSONL_LINE, example_artwork, rkd_path
@@ -55,6 +57,34 @@ def test_rkd_parses_known_artwork(rkd_path):
     assert artwork.museum == "RKD"
     assert artwork.images == ['0000146491.jp2', 'ONS9400117.jp2']
     assert artwork.raw == str(rkd_path)
+
+
+def test_collection_jsonl_round_trip(example_artwork, tmp_path):
+    """Exporting a collection to jsonl and importing it back gives the same artworks."""
+    second_artwork = replace(example_artwork, id="P000002", title="Las Hilanderas")
+    collection = Collection(raw="Multiple", adapter=None)
+    collection.set_artworks([example_artwork, second_artwork])
+
+    file = tmp_path / "collection.jsonl" # tmp_path: fresh temporary folder from pytest
+    collection.as_jsonl(file)
+    loaded = Collection.from_jsonl(file)
+
+    assert len(file.read_text(encoding="utf-8").splitlines()) == 2 # One line per artwork
+    assert loaded.artworks == collection.artworks
+
+
+@pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
+@pytest.mark.xfail(strict=True, reason="Known issue: RKD artists are tuples, which come back from JSON as lists")
+def test_rkd_collection_jsonl_round_trip(rkd_path, tmp_path):
+    """The RKD collection survives a round trip through jsonl."""
+    collection = Collection(rkd_path, adapter="RKD")
+
+    file = tmp_path / "rkd.jsonl"
+    collection.as_jsonl(file)
+    loaded = Collection.from_jsonl(file)
+
+    # Compare as dicts: the loaded artworks are plain Artwork, not ArtworkRKD
+    assert [a.as_dict() for a in loaded] == [a.as_dict() for a in collection]
 
 
 @pytest.mark.xfail(reason="Parser not implemented yet")
