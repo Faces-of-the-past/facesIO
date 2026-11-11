@@ -6,21 +6,26 @@ from tests.conftest import IN_GITHUB_ACTIONS, rkd_path
 
 
 # --- Artwork -----------------------------------------------------------------
+artwork = Artwork(
+    id="P000001",
+    museum="Prado",
+    title="Las Meninas",
+    artists="Diego Velázquez",
+    medium="oil on canvas",
+    images=["https://example.org/img.jpg"],
+    sitter_ids=["sitter-1"],
+)
 
 def test_artwork_stores_fields():
     """An Artwork keeps the values it was built with."""
-    artwork = Artwork(
-        id="P000001",
-        museum="Prado",
-        title="Las Meninas",
-        artists="Diego Velázquez",
-        medium="oil on canvas",
-        images=["https://example.org/img.jpg"],
-        sitter_ids=["sitter-1"],
-    )
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
     assert artwork.raw == None
+
+def test_artwork_as_jsonl_line():
+    """An Artwork gets properly exported"""
+    assert isinstance(artwork.as_dict(), dict)
+    assert artwork.as_jsonl_line() == '{"id": "P000001", "title": "Las Meninas", "artists": "Diego Velázquez", "museum": "Prado", "medium": "oil on canvas", "images": ["https://example.org/img.jpg"], "sitter_ids": ["sitter-1"], "raw": null}'
 
 # --- Collection --------------------------------------------------------------
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
