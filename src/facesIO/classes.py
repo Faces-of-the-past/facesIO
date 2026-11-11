@@ -13,6 +13,7 @@ import json
 from lxml import etree as ET
 from abc import ABC
 from dataclasses import dataclass, asdict
+from typing import Self
 
 from rdflib import Graph
 
@@ -64,6 +65,11 @@ class Artwork(ABC):
     def as_jsonl_line(self) -> str:
         """ Returns the artwork as a line ready to be appended to a jsonl file"""
         return json.dumps(asdict(self), ensure_ascii=False)
+
+    @classmethod # Like staticmethod, but inheritable
+    def from_jsonl_line(cls, line: str) -> Self:
+        """ Loads the artwork from a jsonl line """
+        return cls(**json.loads(line))
 
 @dataclass
 class ArtworkRKD(Artwork):
