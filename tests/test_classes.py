@@ -2,8 +2,8 @@
 from dataclasses import replace
 
 import pytest
-from facesIO.classes import Artwork, ArtworkRKD, Collection
-from tests.conftest import IN_GITHUB_ACTIONS, EXAMPLE_JSONL_LINE, example_artwork, rkd_path
+from facesIO.classes import Artwork, Collection
+from tests.conftest import IN_GITHUB_ACTIONS, EXAMPLE_JSONL_LINE # Constants only: pytest provides fixtures by itself
 
 
 # --- Artwork -----------------------------------------------------------------
@@ -86,8 +86,9 @@ def test_rkd_collection_jsonl_round_trip(rkd_path, tmp_path):
     assert [a.as_dict() for a in loaded] == [a.as_dict() for a in collection]
 
 
-@pytest.mark.xfail(reason="Parser not implemented yet")
-def test_init_prado_collection(): # TODO: remove when parser gets implemented
+@pytest.mark.skip(reason="TODO: Prado parser not implemented yet")
+def test_init_prado_collection(prado_path):
+    """The Prado example file gives a list of Artworks."""
     ...
 
 @pytest.mark.skip(reason="TODO: pick a known artwork from the example file")
