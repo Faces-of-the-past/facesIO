@@ -85,7 +85,7 @@ class ArtworkRKD(Artwork):
 
 @dataclass
 class ArtworkPrado(Artwork):
-    
+
     def __init__(self, record) -> Artwork:
         self.id = "TODO:"
         self.title = "Soon we'll implement a Prado parser"
@@ -119,14 +119,29 @@ class Collection(ABC):
             g = Graph()
             g.parse(self.raw, format="xml")
             self.artworks = ["Prado not implemented yet"]
+        else:
+            pass
+
+    def set_artworks(self, artworks):
+        self.artworks = artworks
 
     def __iter__(self):
         """ Allows using the collection as an iterable """
         yield from self.artworks
 
     def as_jsonl(self, file):
-        """ Represent the collection as a jsonl file """
+        """ Export the collection as a jsonl file """
         lines = [artwork.as_jsonl_line() for artwork in self.artworks]
 
-        with open(file, 'w') as f:
+        with open(file, 'w') as f: # TODO: this might overwrite valid files
             [f.write(line) for line in lines]
+
+    @staticmethod
+    def from_jsonl(file):
+        """ Import the collection from a jsonl file """
+        with open(file, 'r') as f:
+            artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
+
+        c = Collection(raw=None, adapter=None) #TODO: streamline this, consider using dispatch for __init__ methods with different signatures
+        c.set_artworks(artworks)
+        return c
