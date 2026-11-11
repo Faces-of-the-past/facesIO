@@ -47,7 +47,7 @@ class Artwork(ABC):
 
     id: str
     title: str = None
-    artists: str = None
+    artists: list[str] = None
     museum: str = None
     medium: str = None
     images: list[str] = None
@@ -74,7 +74,7 @@ class Artwork(ABC):
 @dataclass
 class ArtworkRKD(Artwork):
 
-    def __init__(self, record : ET.Element) -> Artwork:
+    def __init__(self, record : ET.Element) -> None:
         self.id=record.get("priref") # We can use get because priref is an attribute
         self.title=record.findtext("benaming_kunstwerk")
         self.artists=[(t.findtext("naam"), t.findtext("status")) for t in record.findall("toeschrijving")]
@@ -142,6 +142,6 @@ class Collection(ABC):
         with open(file, 'r') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
-        c = Collection(raw=None, adapter=None) #TODO: streamline this, consider using dispatch for __init__ methods with different signatures
+        c = Collection(raw="Multiple", adapter=None) #TODO: streamline this, consider using dispatch for __init__ methods with different signatures
         c.set_artworks(artworks)
         return c

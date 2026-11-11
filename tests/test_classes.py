@@ -1,7 +1,6 @@
 """Tests for `facesIO.classes`."""
 import pytest
 from facesIO.classes import Artwork, ArtworkRKD, Collection
-from src.facesIO.classes import RKD_SOURCE
 from tests.conftest import IN_GITHUB_ACTIONS, EXAMPLE_JSONL_LINE, example_artwork, rkd_path
 
 
@@ -24,7 +23,10 @@ def test_artwork_as_jsonl_line(example_artwork):
 
 def test_artwork_from_jsonl_line():
     artwork = Artwork(None)
-    artwork.from_jsonl_line(EXAMPLE_JSONL_LINE)
+    artwork = artwork.from_jsonl_line(EXAMPLE_JSONL_LINE)
+    assert artwork.id == "P000001"
+    assert artwork.sitter_ids == ["sitter-1"]
+    assert artwork.raw == None
 
 # --- Collection --------------------------------------------------------------
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
@@ -57,14 +59,7 @@ def test_rkd_parses_known_artwork(rkd_path):
 
 @pytest.mark.xfail(reason="Parser not implemented yet")
 def test_init_prado_collection(): # TODO: remove when parser gets implemented
-    collection = PradoCollection() # Load from example file
-    all_data = collection.import_raw()
-
-    # Perform quick test on the imported raw data, to
-    # check that the right file is being read
-    nodes = all_data.all_nodes()
-    assert len(nodes) == 1662 # Checks that the right file is being read
-
+    ...
 
 @pytest.mark.skip(reason="TODO: pick a known artwork from the example file")
 def test_prado_parses_known_artwork(prado_path):
