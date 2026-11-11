@@ -52,7 +52,7 @@ def test_rkd_parses_known_artwork(rkd_path):
 
     artwork = artworks[0]
     assert artwork.id == "5"
-    assert artwork.artists == [('Dyck, Anthony van', 'huidig')]
+    assert artwork.artist == 'Dyck, Anthony van'
     assert artwork.title == "Portret van koningin Henriëtta Maria de Bourbon, koningin van Engeland (1609-1669)"
     assert artwork.museum == "RKD"
     assert artwork.images == ['0000146491.jp2', 'ONS9400117.jp2']
@@ -74,7 +74,6 @@ def test_collection_jsonl_round_trip(example_artwork, tmp_path):
 
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
-@pytest.mark.xfail(strict=True, reason="Known issue: RKD artists are tuples, which come back from JSON as lists")
 def test_rkd_collection_jsonl_round_trip(rkd_path, tmp_path):
     """The RKD collection survives a round trip through jsonl."""
     collection = Collection(rkd_path, adapter="RKD")

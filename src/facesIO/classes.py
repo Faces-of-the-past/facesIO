@@ -33,9 +33,8 @@ class Artwork(ABC):
         Identifier of the artwork. TODO: within the source, or global?
     title : str
         Artwork title.
-    artists : list
-        Artwork author(s). RKD fills it with ``(name, status)`` tuples.
-        TODO: settle on a single type for all sources.
+    artist : str
+        Name of the main artist. We assume every artwork has one.
     museum : str
         Name of the collection the artwork comes from (e.g. "Prado").
     medium : str
@@ -51,7 +50,7 @@ class Artwork(ABC):
 
     id: str
     title: str = None
-    artists: list[str] = None
+    artist: str = None
     museum: str = None
     medium: str = None
     images: list[str] = None
@@ -88,7 +87,10 @@ class ArtworkRKD(Artwork):
     def __init__(self, record : ET.Element) -> None:
         self.id=record.get("priref") # We can use get because priref is an attribute
         self.title=record.findtext("benaming_kunstwerk")
-        self.artists=[(t.findtext("naam"), t.findtext("status")) for t in record.findall("toeschrijving")]
+        # Main artist: the first current ("huidig") attribution, not a rejected ("verworpen") one.
+        # Fall back to the first attribution of any status.
+        self.artist=(record.findtext("toeschrijving[status='huidig']/naam")
+                     or record.findtext("toeschrijving/naam"))
         self.museum="RKD"
         self.images=[m.findtext("media.reference_number") for m in record.findall("media")]
         self.sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")]
