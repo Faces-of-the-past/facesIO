@@ -13,18 +13,15 @@ pyreverse src/facesIO/classes.py -o png --output-directory docs
 
 import json
 from lxml import etree as ET
-from abc import ABC
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Self
-
-from rdflib import Graph
 
 PRADO_SOURCE = "data/prado_example.rdf"
 RKD_SOURCE = "data/rkd_example.xml"
 
 
 @dataclass
-class Artwork(ABC):
+class Artwork:
     """A single artwork, in a source-independent representation.
 
     Attributes
@@ -74,8 +71,7 @@ class Artwork(ABC):
         """ Loads the artwork from a jsonl line """
         return cls(**json.loads(line))
 
-@dataclass
-class ArtworkRKD(Artwork):
+class ArtworkRKD(Artwork): # Inherits the dataclass features (repr, eq, fields) from Artwork
     """An artwork read from one RKD XML record.
 
     Parameters
@@ -96,7 +92,6 @@ class ArtworkRKD(Artwork):
         self.sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")]
         self.raw = record.getroottree().docinfo.URL
 
-@dataclass
 class ArtworkPrado(Artwork):
     """An artwork read from one Prado RDF record.
 
@@ -108,7 +103,7 @@ class ArtworkPrado(Artwork):
         self.title = "Soon we'll implement a Prado parser"
 
 @dataclass
-class Collection(ABC):
+class Collection:
     """A collection of artworks, read from a source file or a jsonl export.
 
     Parameters
@@ -116,9 +111,18 @@ class Collection(ABC):
     raw : str
         Path to the source file to parse.
     adapter : str or None, optional
-        Which parser to use: ``"RKD"`` (default) or ``"Prado"``. With any other
-        value nothing is parsed, and `artworks` must be filled with
-        `set_artworks` (this is what `from_jsonl` does).
+        Which parser to use: ``"RKD"`` (default) or ``"Prado"`` (not implemented
+        yet). Ignored when `artworks` is given.
+    artworks : list[Artwork], optional
+        Ready-made artworks. If given, nothing is parsed (this is what
+        `from_jsonl` uses).
+
+    Raises
+    ------
+    ValueError
+        If `adapter` is not a known parser and no `artworks` are given.
+    NotImplementedError
+        If `adapter` is ``"Prado"``.
 
     Attributes
     ----------
@@ -132,20 +136,29 @@ class Collection(ABC):
         Artworks contained in the collection.
     """
 
-    def __init__(self, raw : str, adapter : str ='RKD'):
+    # Declared so the dataclass can build __repr__ and __eq__ from them.
+    # __init__ is our own (a dataclass keeps a hand-written __init__).
+    raw: str
+    adapter: str | None
+    artworks: list[Artwork] = field(repr=False) # Too long to print
+
+    def __init__(self, raw : str, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
         self.raw = raw
         self.adapter = adapter
 
-        # Choose the right parser
-        if(adapter=="RKD"):
+        # Ready-made artworks: nothing to parse
+        if artworks is not None:
+            self.artworks = list(artworks)
+            return
+
+        # Otherwise, choose the right parser
+        if adapter == "RKD":
             tree = ET.parse(raw)
             self.artworks = [ArtworkRKD(record) for record in tree.iter("record")]
-        elif(adapter == "Prado"):
-            g = Graph()
-            g.parse(self.raw, format="xml")
-            self.artworks = ["Prado not implemented yet"]
+        elif adapter == "Prado":
+            raise NotImplementedError("The Prado parser is not implemented yet")
         else:
-            pass
+            raise ValueError(f"Unknown adapter {adapter!r}: use 'RKD' or 'Prado', or pass `artworks`")
 
     def set_artworks(self, artworks):
         """Replace the collection's artworks with `artworks` (a list of `Artwork`)."""
@@ -166,10 +179,10 @@ class Collection(ABC):
         lines = [artwork.as_jsonl_line() for artwork in self.artworks]
 
         with open(file, 'w', encoding='utf-8') as f: # TODO: this might overwrite valid files
-            [f.write(line) for line in lines]
+            f.writelines(lines)
 
-    @staticmethod
-    def from_jsonl(file):
+    @classmethod # Like staticmethod, but inheritable
+    def from_jsonl(cls, file) -> Self:
         """Import a collection from a jsonl file written by `as_jsonl`.
 
         Parameters
@@ -186,6 +199,4 @@ class Collection(ABC):
         with open(file, 'r', encoding='utf-8') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
-        c = Collection(raw="Multiple", adapter=None) #TODO: streamline this, consider using dispatch for __init__ methods with different signatures
-        c.set_artworks(artworks)
-        return c
+        return cls(raw="Multiple", adapter=None, artworks=artworks)

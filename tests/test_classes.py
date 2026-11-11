@@ -62,8 +62,7 @@ def test_rkd_parses_known_artwork(rkd_path):
 def test_collection_jsonl_round_trip(example_artwork, tmp_path):
     """Exporting a collection to jsonl and importing it back gives the same artworks."""
     second_artwork = replace(example_artwork, id="P000002", title="Las Hilanderas")
-    collection = Collection(raw="Multiple", adapter=None)
-    collection.set_artworks([example_artwork, second_artwork])
+    collection = Collection(raw="Multiple", adapter=None, artworks=[example_artwork, second_artwork])
 
     file = tmp_path / "collection.jsonl" # tmp_path: fresh temporary folder from pytest
     collection.as_jsonl(file)
@@ -71,6 +70,27 @@ def test_collection_jsonl_round_trip(example_artwork, tmp_path):
 
     assert len(file.read_text(encoding="utf-8").splitlines()) == 2 # One line per artwork
     assert loaded.artworks == collection.artworks
+
+
+def test_collection_unknown_adapter_raises():
+    """An unknown adapter fails right away, instead of leaving `artworks` unset."""
+    with pytest.raises(ValueError, match="Unknown adapter"):
+        Collection("any_file.xml", adapter="Louvre")
+
+
+def test_collection_prado_not_implemented(prado_path):
+    """Asking for the Prado parser says clearly that it doesn't exist yet."""
+    with pytest.raises(NotImplementedError):
+        Collection(prado_path, adapter="Prado")
+
+
+def test_collection_equality(example_artwork):
+    """Collections are equal only if their fields, artworks included, are equal."""
+    collection = Collection(raw="Multiple", adapter=None, artworks=[example_artwork])
+    same = Collection(raw="Multiple", adapter=None, artworks=[example_artwork])
+    empty = Collection(raw="Multiple", adapter=None, artworks=[])
+    assert collection == same
+    assert collection != empty
 
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
