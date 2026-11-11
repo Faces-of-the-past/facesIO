@@ -54,9 +54,24 @@ class Artwork(ABC):
 
     def __str__(self) -> str:
         """ Human-friendly name """
-        return "{museum}-{id} : {title}".format(museum=self.museum, id=self.id, title=self.title)
+        return f"{self.museum}-{self.id} : {self.title}"
+
+class ArtworkRKD(Artwork):
+
+    def __init__(self, record : ET.Element) -> Artwork:
+        self.id=record.get("priref") # We can use get because priref is an attribute
+        self.title=record.findtext("benaming_kunstwerk")
+        self.artists=[(t.findtext("naam"), t.findtext("status")) for t in record.findall("toeschrijving")]
+        self.museum="RKD"
+        self.images=[m.findtext("media.reference_number") for m in record.findall("media")]
+        self.sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")]
 
 @dataclass
+class ArtworkPrado(Artwork):
+    def __init__(self, record) -> Artwork:
+        self.id = "TODO:"
+        self.title = "Soon we'll implement a Prado parser"
+
 class Collection(ABC):
     """Abstract base for a collection of artworks read from a single source.
 
@@ -67,115 +82,25 @@ class Collection(ABC):
     raw      : str
         The raw file containing all the collection information. We keep it here
         as a reference, in case we need further information down the line.
+    adapter  : str
+        Currently we support `RKD` and `Prado`
     artworks : List[Artwork]
         Artworks contained in the collection.
     """
 
-    raw: str
-    artworks: list[Artwork]
+    def __init__(self, raw : str, adapter : str ='RKD'):
+        self.raw = raw
+        self.adapter = adapter
+
+        # Choose the right parser
+        if(adapter=="RKD"):
+            tree = ET.parse(raw)
+            self.artworks = [ArtworkRKD(record) for record in tree.iter("record")]
+        elif(adapter == "Prado"):
+            g = Graph()
+            g.parse(self.raw, format="xml")
+            self.artworks = ["Prado not implemented yet"]
 
     def __iter__(self):
         """ Allows using the collection as an iterable """
         yield from self.artworks
-
-    # The methods below deliberately do NOTHING. Their ONLY functionality is to fail
-    # if not implemented by an underlying class.
-
-    @abstractmethod
-    def import_raw(self):
-        """ Import the whole raw file
-        # TODO: consider turning this and its implementations into static methods.
-        # TODO: consider removing.
-        # We might reuse them inside of Artwork to retrieve the extra information from file.
-        """
-
-    @abstractmethod
-    def read_from_file(self, path) -> list[Artwork]:
-        """Parse a source file into a list of artworks.
-
-        Parameters
-        ----------
-        path : str
-            Path to the file to parse.
-
-        Returns
-        -------
-        List[Artwork]
-            Artworks found in the file.
-        """
-
-
-class PradoCollection(Collection):
-    """Collection of artworks from the Museo del Prado (RDF format).
-
-    Parameters
-    ----------
-    path : str, optional
-        Path to the Prado RDF file. Defaults to `PRADO_SOURCE`.
-    """
-
-    def __init__(self, path=PRADO_SOURCE):
-        self.raw = path
-        self.artworks = self.read_from_file(path)
-
-    def import_raw(self):
-        g = Graph()
-        return g.parse(self.raw, format="xml")
-
-    def read_from_file(self, path=PRADO_SOURCE) -> list[Artwork]:
-        """Parse a Prado RDF file into a list of artworks.
-
-        Parameters
-        ----------
-        path : str, optional
-            Path to the Prado RDF file. Defaults to `PRADO_SOURCE`.
-
-        Returns
-        -------
-        List[Artwork]
-            Artworks found in the file.
-
-        """
-        print("Parsing from Prado")
-        return self.import_raw() # TODO: parse the raw data into an Artwork object
-
-class RKDCollection(Collection):
-    """Collection of artworks from the RKD (Netherlands Institute for Art History, XML format).
-
-    Parameters
-    ----------
-    path : str, optional
-        Path to the RKD XML file. Defaults to `RKD_SOURCE`.
-    """
-
-    def __init__(self, path=RKD_SOURCE):
-        self.raw = path
-        self.artworks = self.read_from_file(path)
-
-    def import_raw(self):
-        return ET.parse(self.raw)
-
-    def read_from_file(self, path=RKD_SOURCE) -> list[Artwork]:
-        """Parse an RKD XML file into a list of artworks.
-
-        Parameters
-        ----------
-        path : str, optional
-            Path to the RKD XML file. Defaults to `RKD_SOURCE`.
-
-        Returns
-        -------
-        List[Artwork]
-            Artworks found in the file.
-        """
-        tree = ET.parse(path)
-        artworks = [Artwork(id=record.get("priref"), # We can use get because priref is an attribute
-                            title=record.findtext("benaming_kunstwerk"),
-                            artists=[(t.findtext("naam"), t.findtext("status")) for t in record.findall("toeschrijving")],
-                            museum="RKD",
-                            images=[m.findtext("media.reference_number") for m in record.findall("media")],
-                            sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")],
-                            raw=path)
-                    for record in tree.iter('record')]
-
-        return artworks
