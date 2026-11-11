@@ -1,7 +1,9 @@
 """Data model for artworks and the collections they come from.
 
-Each museum / archive gets its own `Collection` subclass, responsible for
-parsing that source's native format into a list of common `Artwork` objects.
+Each museum / archive gets its own `Artwork` subclass (e.g. `ArtworkRKD`),
+responsible for parsing one record of that source's native format into the
+common `Artwork` fields. A `Collection` reads a whole source file and picks the
+right subclass through its `adapter` argument.
 
 See UML diagram at docs/classes.png
 
@@ -31,18 +33,20 @@ class Artwork(ABC):
         Identifier of the artwork. TODO: within the source, or global?
     title : str
         Artwork title.
-    artists : List[str]
-        Artwork author(s).
+    artists : list
+        Artwork author(s). RKD fills it with ``(name, status)`` tuples.
+        TODO: settle on a single type for all sources.
     museum : str
         Name of the collection the artwork comes from (e.g. "Prado").
     medium : str
         Material / technique (e.g. "oil on canvas"). TODO: controlled vocabulary?
-    images : List[str]
+    images : list[str]
         URLs or paths to images of the artwork.
-    sitter_ids : List[str]
+    sitter_ids : list[str]
         Identifiers of the people depicted.
-    extra : dict
-        Source-specific metadata not covered by the fields above.
+    raw : str
+        Path to the source file the artwork was read from, so the full original
+        record can be looked up later.
     """
 
     id: str
@@ -73,6 +77,13 @@ class Artwork(ABC):
 
 @dataclass
 class ArtworkRKD(Artwork):
+    """An artwork read from one RKD XML record.
+
+    Parameters
+    ----------
+    record : lxml.etree.Element
+        A ``<record>`` element from an RKD XML export.
+    """
 
     def __init__(self, record : ET.Element) -> None:
         self.id=record.get("priref") # We can use get because priref is an attribute
@@ -85,6 +96,10 @@ class ArtworkRKD(Artwork):
 
 @dataclass
 class ArtworkPrado(Artwork):
+    """An artwork read from one Prado RDF record.
+
+    TODO: placeholder; the Prado parser is not implemented yet.
+    """
 
     def __init__(self, record) -> Artwork:
         self.id = "TODO:"
@@ -92,18 +107,26 @@ class ArtworkPrado(Artwork):
 
 @dataclass
 class Collection(ABC):
-    """Abstract base for a collection of artworks read from a single source.
+    """A collection of artworks, read from a source file or a jsonl export.
 
-    Subclasses must implement `read_from_file` and `import_raw`.
+    Parameters
+    ----------
+    raw : str
+        Path to the source file to parse.
+    adapter : str or None, optional
+        Which parser to use: ``"RKD"`` (default) or ``"Prado"``. With any other
+        value nothing is parsed, and `artworks` must be filled with
+        `set_artworks` (this is what `from_jsonl` does).
 
     Attributes
     ----------
-    raw      : str
+    raw : str
         The raw file containing all the collection information. We keep it here
         as a reference, in case we need further information down the line.
-    adapter  : str
-        Currently we support `RKD` and `Prado`
-    artworks : List[Artwork]
+        ``"Multiple"`` when loaded with `from_jsonl`.
+    adapter : str or None
+        The parser used, see Parameters.
+    artworks : list[Artwork]
         Artworks contained in the collection.
     """
 
@@ -123,6 +146,7 @@ class Collection(ABC):
             pass
 
     def set_artworks(self, artworks):
+        """Replace the collection's artworks with `artworks` (a list of `Artwork`)."""
         self.artworks = artworks
 
     def __iter__(self):
@@ -130,7 +154,13 @@ class Collection(ABC):
         yield from self.artworks
 
     def as_jsonl(self, file):
-        """ Export the collection as a jsonl file """
+        """Export the collection as a jsonl file, one artwork per line.
+
+        Parameters
+        ----------
+        file : str or Path
+            Output path. An existing file is overwritten.
+        """
         lines = [artwork.as_jsonl_line() for artwork in self.artworks]
 
         with open(file, 'w') as f: # TODO: this might overwrite valid files
@@ -138,7 +168,19 @@ class Collection(ABC):
 
     @staticmethod
     def from_jsonl(file):
-        """ Import the collection from a jsonl file """
+        """Import a collection from a jsonl file written by `as_jsonl`.
+
+        Parameters
+        ----------
+        file : str or Path
+            Path to the jsonl file.
+
+        Returns
+        -------
+        Collection
+            Collection with ``raw="Multiple"`` and ``adapter=None``. The artworks
+            are plain `Artwork` objects, not source-specific subclasses.
+        """
         with open(file, 'r') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
