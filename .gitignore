@@ -223,3 +223,6 @@ __marimo__/
 data/rkd_example.xml
 
 prototype.*
+*.ipynb
+*.xml
+*.jsonl

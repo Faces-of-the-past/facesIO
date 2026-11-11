@@ -11,46 +11,7 @@ Eventually, a list (or iterable) of `Sitter` objects will be fed to the ML algor
 
 See diagram below:
 
-```mermaid
-classDiagram
-
-note for Interface "Single interface for all adapted data"
-Interface: + Collection _adapter
-Interface: + set_adapter(Collection)
-Interface: + get_records(self) list~Artwork~
-
-note for Collection "Adapter hyperclass listing common functionalities for any collection"
-Collection : + list~Artwork~ _records
-Collection: + export(file)
-Collection: + __init__(self, file) @abstractmethod
-
-note for Artwork "Represents one record in the collection"
-Artwork: + str id
-Artwork: + str source
-Artwork: + str medium
-Artwork: + list~str~ images
-Artwork: + list~str~ sitter_ids
-Artwork: + dict extra
-Artwork: + crop_faces(self) list~Sitter~
-
-note for Sitter "Represents an individual sitter"
-Sitter: + str sitter_id
-Sitter: + str sitter_image
-Sitter: + disambiguate_sitter_id(self) str
-
-Interface ..> Collection
-Collection ..> Artwork
-Artwork ..> Sitter
-Collection <|-- RKDCollection
-Collection <|-- PradoCollection
-
-namespace Implementations{
-	class RKDCollection
-	class PradoCollection
-}
-
-
-```
+![](docs/classes.png)
 
 The idea is that the **same** interface can handle all sources of data. The specific implementations for handling different input sources are delegated to the sub-classes. 
 

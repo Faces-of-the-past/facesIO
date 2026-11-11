@@ -102,6 +102,13 @@ class ArtworkPrado(Artwork):
         self.id = "TODO:"
         self.title = "Soon we'll implement a Prado parser"
 
+class Sitter(Artwork):
+    sitter_id: str
+    sitter_image: str
+
+    def __init__(self) -> None:
+        raise NotImplementedError("The Prado parser is not implemented yet")
+
 @dataclass
 class Collection:
     """A collection of artworks, read from a source file or a jsonl export.
