@@ -103,7 +103,7 @@ class ArtworkPrado(Artwork):
     TODO: placeholder; the Prado parser is not implemented yet.
     """
 
-    def __init__(self, record) -> Artwork:
+    def __init__(self, record) -> None:
         self.id = "TODO:"
         self.title = "Soon we'll implement a Prado parser"
 
@@ -165,7 +165,7 @@ class Collection(ABC):
         """
         lines = [artwork.as_jsonl_line() for artwork in self.artworks]
 
-        with open(file, 'w') as f: # TODO: this might overwrite valid files
+        with open(file, 'w', encoding='utf-8') as f: # TODO: this might overwrite valid files
             [f.write(line) for line in lines]
 
     @staticmethod
@@ -183,7 +183,7 @@ class Collection(ABC):
             Collection with ``raw="Multiple"`` and ``adapter=None``. The artworks
             are plain `Artwork` objects, not source-specific subclasses.
         """
-        with open(file, 'r') as f:
+        with open(file, 'r', encoding='utf-8') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
         c = Collection(raw="Multiple", adapter=None) #TODO: streamline this, consider using dispatch for __init__ methods with different signatures
