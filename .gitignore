@@ -222,7 +222,7 @@ __marimo__/
 # Private collections
 data/rkd_example.xml
 
-prototype.*
+prototype*
 *.ipynb
 *.xml
 *.jsonl
