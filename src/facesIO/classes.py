@@ -14,11 +14,11 @@ pyreverse src/facesIO/classes.py -o png --output-directory docs
 import json
 from lxml import etree as ET
 from dataclasses import dataclass, asdict, field
-from typing import Iterable, Self
+from typing import Self
+from facesIO.parsers import iter_rkd_records
 
-PRADO_SOURCE = "data/prado_example.rdf"
-RKD_SOURCE = "data/rkd_example.xml"
-
+SOURCE_PRADO = "data/prado_example.rdf"
+SOURCE_RKD = "data/rkd_example.xml"
 
 @dataclass
 class Artwork:
@@ -160,25 +160,12 @@ class Collection:
 
         # Otherwise, choose the right parser
         if adapter == "RKD":
-
-            def _iter_rkd_records(raw: str) -> Iterable:
-                """Yield the <record> elements of an RKD export one by one, freeing each after use.
-                Otherwise, memory will crash when reading large xml files"""
-                # Return the records one by one
-                for _, record in ET.iterparse(raw, tag="record"):
-                    yield record
-
-                    # Throw away the garbage
-                    record.clear() # Empty the current record contents
-                    while record.getprevious() is not None: # Empty the current record placeholder
-                            del record.getparent()[0]
-
-            self.artworks = [ArtworkRKD(record) for record in _iter_rkd_records(raw)]
-
+            self.artworks = [ArtworkRKD(record) for record in iter_rkd_records(raw)]
         elif adapter == "Prado":
             raise NotImplementedError("The Prado parser is not implemented yet")
         else:
             raise ValueError(f"Unknown adapter {adapter!r}: use 'RKD' or 'Prado', or pass `artworks`")
+
 
     def set_artworks(self, artworks):
         """Replace the collection's artworks with `artworks` (a list of `Artwork`)."""
