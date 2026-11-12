@@ -14,7 +14,7 @@ pyreverse src/facesIO/classes.py -o png --output-directory docs
 import json
 from lxml import etree as ET
 from dataclasses import dataclass, asdict, field
-from typing import Self
+from typing import Iterable, Self
 
 PRADO_SOURCE = "data/prado_example.rdf"
 RKD_SOURCE = "data/rkd_example.xml"
@@ -160,8 +160,21 @@ class Collection:
 
         # Otherwise, choose the right parser
         if adapter == "RKD":
-            tree = ET.parse(raw)
-            self.artworks = [ArtworkRKD(record) for record in tree.iter("record")]
+
+            def _iter_rkd_records(raw: str) -> Iterable:
+                """Yield the <record> elements of an RKD export one by one, freeing each after use.
+                Otherwise, memory will crash when reading large xml files"""
+                # Return the records one by one
+                for _, record in ET.iterparse(raw, tag="record"):
+                    yield record
+
+                    # Throw away the garbage
+                    record.clear() # Empty the current record contents
+                    while record.getprevious() is not None: # Empty the current record placeholder
+                            del record.getparent()[0]
+
+            self.artworks = [ArtworkRKD(record) for record in _iter_rkd_records(raw)]
+
         elif adapter == "Prado":
             raise NotImplementedError("The Prado parser is not implemented yet")
         else:
