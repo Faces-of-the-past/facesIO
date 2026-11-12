@@ -12,7 +12,7 @@ poetry run pytest -q
 
 - Paths to the example data (`data_dir`, `prado_path`, `rkd_path`). They are built
   from the repo root, so the tests don't depend on which folder you run `pytest`
-  from. The default `PRADO_SOURCE` and `RKD_SOURCE` paths in the code would.
+  from. The default `SOURCE_PRADO` and `SOURCE_RKD` paths in the code would.
 - `example_artwork`, a hand-made `Artwork`, and `EXAMPLE_JSONL_LINE`, its expected
   jsonl export.
 - `IN_GITHUB_ACTIONS`, true when running on GitHub's CI.
@@ -27,6 +27,15 @@ poetry run pytest -q
 | `test_init_rkd_collection` | The RKD example file gives a list of 21 `Artwork`s |
 | `test_rkd_parses_known_artwork` | The first RKD artwork has the expected fields |
 | `test_*_prado_*` | Placeholders until the Prado parser exists |
+
+**`test_parsers.py`** tests `facesIO.parsers` on a tiny made-up RKD-like file
+(written to a temporary folder), so it needs no RKD data and runs on CI too:
+
+| Test | What it checks |
+|---|---|
+| `test_iter_rkd_records_yields_all_in_order` | Every record comes out, in file order |
+| `test_iter_rkd_records_frees_previous_records` | Used records are emptied, then detached: memory stays flat |
+| `test_iter_rkd_records_feeds_artwork_rkd` | `ArtworkRKD`s built while iterating keep their data |
 
 ## RKD data
 
