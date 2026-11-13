@@ -107,7 +107,7 @@ class Sitter(Artwork):
     sitter_image: str
 
     def __init__(self) -> None:
-        raise NotImplementedError("The Prado parser is not implemented yet")
+        raise NotImplementedError("The Sitter parser is not implemented yet")
 
 @dataclass
 class Collection:
@@ -225,7 +225,7 @@ class Collection:
         both collections.
         """
         if not isinstance(other, Collection): # Only Collections can be added
-            return NotImplemented # TODO: create a more transparent exception
+            raise NotImplementedError("Only another Collection can be added to a given Collection")
 
         return Collection(self.artworks + other.artworks)
 

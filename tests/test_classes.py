@@ -145,7 +145,7 @@ def test_collection_copies_artworks(example_artwork):
 def test_collection_add_non_collection_raises(example_artwork):
     """Adding something that is not a Collection gives Python's standard TypeError."""
     collection = Collection([example_artwork])
-    with pytest.raises(TypeError):
+    with pytest.raises(NotImplementedError):
         collection + 3
 
 
