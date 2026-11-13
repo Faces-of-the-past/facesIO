@@ -12,7 +12,7 @@ def test_artwork_stores_fields(example_artwork):
     artwork = example_artwork
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
-    assert artwork.raw == None
+    assert artwork.source == None
 
 def test_artwork_as_jsonl_line(example_artwork):
     """An Artwork gets properly exported"""
@@ -21,14 +21,14 @@ def test_artwork_as_jsonl_line(example_artwork):
     assert artwork.as_jsonl_line() == EXAMPLE_JSONL_LINE
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
-    assert artwork.raw == None
+    assert artwork.source == None
 
 def test_artwork_from_jsonl_line():
     artwork = Artwork(None)
     artwork = artwork.from_jsonl_line(EXAMPLE_JSONL_LINE)
     assert artwork.id == "P000001"
     assert artwork.sitter_ids == ["sitter-1"]
-    assert artwork.raw == None
+    assert artwork.source == None
 
 # --- Collection --------------------------------------------------------------
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
@@ -36,7 +36,7 @@ def test_init_rkd_collection(rkd_path):
     collection = Collection(rkd_path, adapter="RKD") # Load from example file
 
     # Perform quick test on the imported data
-    assert collection.raw == {str(rkd_path)} # Read from the artworks: one source file
+    assert collection.sources == {str(rkd_path)} # Read from the artworks: one source file
     assert isinstance(collection.artworks, list)
     assert all(isinstance(a, Artwork) for a in collection.artworks)
 
@@ -56,13 +56,13 @@ def test_rkd_parses_known_artwork(rkd_path):
     assert artwork.title == "Portret van koningin Henriëtta Maria de Bourbon, koningin van Engeland (1609-1669)"
     assert artwork.museum == "RKD"
     assert artwork.images == ['0000146491.jp2', 'ONS9400117.jp2']
-    assert artwork.raw == str(rkd_path)
+    assert artwork.source == str(rkd_path)
 
 
 def test_collection_jsonl_round_trip(example_artwork, tmp_path):
     """Exporting a collection to jsonl and importing it back gives the same artworks."""
     second_artwork = replace(example_artwork, id="P000002", title="Las Hilanderas")
-    collection = Collection(raw=None, adapter=None, artworks=[example_artwork, second_artwork])
+    collection = Collection(source=None, adapter=None, artworks=[example_artwork, second_artwork])
 
     file = tmp_path / "collection.jsonl" # tmp_path: fresh temporary folder from pytest
     collection.as_jsonl(file)
@@ -86,43 +86,43 @@ def test_collection_prado_not_implemented(prado_path):
 
 def test_collection_equality(example_artwork):
     """Collections are equal only if their fields, artworks included, are equal."""
-    collection = Collection(raw=None, adapter=None, artworks=[example_artwork])
-    same = Collection(raw=None, adapter=None, artworks=[example_artwork])
-    empty = Collection(raw=None, adapter=None, artworks=[])
+    collection = Collection(source=None, adapter=None, artworks=[example_artwork])
+    same = Collection(source=None, adapter=None, artworks=[example_artwork])
+    empty = Collection(source=None, adapter=None, artworks=[])
     assert collection == same
     assert collection != empty
 
 
 def test_collection_add(example_artwork):
     """Adding collections keeps all artworks in order, duplicates included, and all source files."""
-    from_first = replace(example_artwork, raw="first.xml")
-    from_second = replace(example_artwork, id="P000002", raw="second.xml")
-    first = Collection(raw=None, adapter=None, artworks=[from_first])
-    second = Collection(raw=None, adapter=None, artworks=[from_second, example_artwork]) # example_artwork: raw=None
+    from_first = replace(example_artwork, source="first.xml")
+    from_second = replace(example_artwork, id="P000002", source="second.xml")
+    first = Collection(source=None, adapter=None, artworks=[from_first])
+    second = Collection(source=None, adapter=None, artworks=[from_second, example_artwork]) # example_artwork: source=None
 
     combined = first + second
 
     assert [a.id for a in combined] == ["P000001", "P000002", "P000001"] # Order kept, duplicate kept
-    assert combined.raw == {"first.xml", "second.xml"} # Unknown source (None) left out
+    assert combined.sources == {"first.xml", "second.xml"} # Unknown source (None) left out
     assert combined.adapter is None
     assert [a.id for a in first] == ["P000001"] # The originals are left unchanged
 
 
 def test_collection_raw_follows_artworks(example_artwork):
-    """`raw` is computed from the artworks, so it can't go out of date."""
-    collection = Collection(raw=None, adapter=None, artworks=[])
-    assert collection.raw == set()
+    """`sources` is computed from the artworks, so it can't go out of date."""
+    collection = Collection(source=None, adapter=None, artworks=[])
+    assert collection.sources == set()
 
-    collection.artworks.append(replace(example_artwork, raw="late.xml"))
-    assert collection.raw == {"late.xml"}
+    collection.artworks.append(replace(example_artwork, source="late.xml"))
+    assert collection.sources == {"late.xml"}
 
     with pytest.raises(AttributeError): # Read-only: it can't be set by hand
-        collection.raw = "other.xml"
+        collection.sources = "other.xml"
 
 
 def test_collection_add_non_collection_raises(example_artwork):
     """Adding something that is not a Collection gives Python's standard TypeError."""
-    collection = Collection(raw=None, adapter=None, artworks=[example_artwork])
+    collection = Collection(source=None, adapter=None, artworks=[example_artwork])
     with pytest.raises(TypeError):
         collection + 3
 

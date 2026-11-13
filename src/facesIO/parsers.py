@@ -1,14 +1,14 @@
 from lxml import etree as ET
 from collections.abc import Iterator
 
-def iter_rkd_records(raw: str) -> Iterator[ET._Element]:
+def iter_rkd_records(source: str) -> Iterator[ET._Element]:
     """Yield the <record> elements of an RKD export one by one, freeing each after use.
 
     Reading record by record keeps memory flat, so huge exports don't crash.
 
     Parameters
     ----------
-    raw : str or Path
+    source : str or Path
         Path to the RKD XML export.
 
     Yields
@@ -18,7 +18,7 @@ def iter_rkd_records(raw: str) -> Iterator[ET._Element]:
         requested, so extract what you need (e.g. with `ArtworkRKD`) before that.
     """
     # Return the records one by one
-    for _, record in ET.iterparse(raw, tag="record"):
+    for _, record in ET.iterparse(source, tag="record"):
         yield record
 
         # Throw away the garbage

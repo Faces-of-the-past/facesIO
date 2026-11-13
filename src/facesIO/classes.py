@@ -40,9 +40,9 @@ class Artwork:
         URLs or paths to images of the artwork.
     sitter_ids : list[str]
         Identifiers of the people depicted.
-    raw : str
-        Path to the source file the artwork was read from, so the full original
-        record can be looked up later.
+    source : str
+        Where the artwork was read from (e.g. the path of the source file), so
+        the full original record can be looked up later.
     """
 
     id: str
@@ -52,7 +52,7 @@ class Artwork:
     medium: str = None
     images: list[str] = None
     sitter_ids: list[str] = None
-    raw: str = None
+    source: str = None
 
     def __str__(self) -> str:
         """ Human-friendly name """
@@ -90,7 +90,7 @@ class ArtworkRKD(Artwork): # Inherits the dataclass features (repr, eq, fields) 
         self.museum="RKD"
         self.images=[m.findtext("media.reference_number") for m in record.findall("media")]
         self.sitter_ids=[sitter.findtext("naam_voorgestelde") for sitter in record.findall("voorgestelde")]
-        self.raw = record.getroottree().docinfo.URL
+        self.source = record.getroottree().docinfo.URL
 
 class ArtworkPrado(Artwork):
     """An artwork read from one Prado RDF record.
@@ -115,8 +115,9 @@ class Collection:
 
     Parameters
     ----------
-    raw : str or None
-        Path to the source file to parse. Not stored: see the `raw` attribute.
+    source : str or None
+        Where to read the artworks from (e.g. the path of a file). Not stored:
+        the `sources` attribute is computed from the artworks instead.
         Ignored (use None) when `artworks` is given.
     adapter : str or None, optional
         Which parser to use: ``"RKD"`` (default) or ``"Prado"`` (not implemented
@@ -134,8 +135,8 @@ class Collection:
 
     Attributes
     ----------
-    raw : set[str]
-        Source files of the artworks, computed from the artworks themselves
+    sources : set[str]
+        Sources of the artworks, computed from the artworks themselves
         (read-only). One file for a collection parsed from a file, several
         after `+`. Empty if no artwork knows its source.
     adapter : str or None
@@ -146,11 +147,11 @@ class Collection:
 
     # Declared so the dataclass can build __eq__ from them.
     # __init__ and __repr__ are our own (a dataclass keeps hand-written ones).
-    # `raw` is not a field: it's a property computed from `artworks`, see below.
+    # `sources` is not a field: it's a property computed from `artworks`, see below.
     adapter: str | None
     artworks: list[Artwork]
 
-    def __init__(self, raw : str | None, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
+    def __init__(self, source : str | None, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
         self.adapter = adapter
 
         # Ready-made artworks: nothing to parse
@@ -160,22 +161,25 @@ class Collection:
 
         # Otherwise, choose the right parser
         if adapter == "RKD":
-            self.artworks = [ArtworkRKD(record) for record in iter_rkd_records(raw)]
+            self.artworks = [ArtworkRKD(record) for record in iter_rkd_records(source)]
         elif adapter == "Prado":
             raise NotImplementedError("The Prado parser is not implemented yet")
         else:
             raise ValueError(f"Unknown adapter {adapter!r}: use 'RKD' or 'Prado', or pass `artworks`")
 
-    @property # Read like an attribute (collection.raw), lazy-evaluated on each access
-    def raw(self) -> set[str]:
-        """Source files used for building this collection. Artworks with unknown source (raw=None) are left out.
+    @property # Read like an attribute (collection.sources), lazy-evaluated on each access
+    def sources(self) -> set[str]:
+        """Source files used for building this collection. Artworks with unknown source (source=None) are left out.
 
-        The raw files are relevant both at an Artwork and at a Collection level. This way, we store them only once """
-        return {artwork.raw for artwork in self.artworks if artwork.raw is not None}
+        The sources are relevant both at an Artwork and at a Collection level. This way, we store them only once """
+        return {artwork.source for artwork in self.artworks if artwork.source is not None}
 
     def __repr__(self) -> str:
-        """Short description: source files, parser, and number of artworks (the list itself is too long)."""
-        return f"Collection(raw={self.raw!r}, adapter={self.adapter!r}, artworks=<{len(self.artworks)} artworks>)"
+        """Short description: number of artworks, source files and parser (the list itself is too long).
+
+        Written in angle brackets, Python's convention for a repr that is not a constructor call.
+        """
+        return f"<Collection: {len(self.artworks)} artworks from {self.sources!r}, adapter={self.adapter!r}>"
 
     def __iter__(self):
         """ Allows using the collection as an iterable """
@@ -184,13 +188,14 @@ class Collection:
     def __add__(self, other: "Collection") -> "Collection":
         """Combine two collections: the artworks of `self`, then those of `other`.
 
-        Duplicates are kept. The result's `raw` holds the source files of both
+        Duplicates are kept. The result's `sources` holds the sources of both
         collections; its `adapter` is None, since no single parser was used.
         """
         if not isinstance(other, Collection): # Only Collections can be added
-            return NotImplemented
+            return NotImplemented # TODO: create a more transparent exception
+
         both_artworks = self.artworks + other.artworks
-        return Collection(raw = None, adapter = None, artworks = both_artworks)
+        return Collection(source = None, adapter = None, artworks = both_artworks)
 
     def as_jsonl(self, file):
         """Export the collection as a jsonl file, one artwork per line.
@@ -217,11 +222,11 @@ class Collection:
         Returns
         -------
         Collection
-            Collection with ``adapter=None``. Its `raw` gives the original
-            source files, as stored in each artwork. The artworks are plain
+            Collection with ``adapter=None``. Its `sources` gives the original
+            sources, as stored in each artwork. The artworks are plain
             `Artwork` objects, not source-specific subclasses.
         """
         with open(file, 'r', encoding='utf-8') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
-        return cls(raw=None, adapter=None, artworks=artworks)
+        return cls(source=None, adapter=None, artworks=artworks)
