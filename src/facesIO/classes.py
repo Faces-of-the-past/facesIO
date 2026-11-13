@@ -115,8 +115,9 @@ class Collection:
 
     Parameters
     ----------
-    raw : str
-        Path to the source file to parse.
+    raw : str or None
+        Path to the source file to parse. None when the artworks are not read
+        from a single source file (e.g. from `from_jsonl` or `+`).
     adapter : str or None, optional
         Which parser to use: ``"RKD"`` (default) or ``"Prado"`` (not implemented
         yet). Ignored when `artworks` is given.
@@ -133,23 +134,24 @@ class Collection:
 
     Attributes
     ----------
-    raw : str
+    raw : str or None
         The raw file containing all the collection information. We keep it here
         as a reference, in case we need further information down the line.
-        ``"Multiple"`` when loaded with `from_jsonl`.
+        None when not read from a single source file; each artwork still keeps
+        its own `raw` and `museum`.
     adapter : str or None
-        The parser used, see Parameters.
+        The parser used, see Parameters. None when nothing was parsed.
     artworks : list[Artwork]
         Artworks contained in the collection.
     """
 
     # Declared so the dataclass can build __repr__ and __eq__ from them.
     # __init__ is our own (a dataclass keeps a hand-written __init__).
-    raw: str
+    raw: str | None
     adapter: str | None
     artworks: list[Artwork] = field(repr=False) # Too long to print
 
-    def __init__(self, raw : str, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
+    def __init__(self, raw : str | None, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
         self.raw = raw
         self.adapter = adapter
 
@@ -169,6 +171,18 @@ class Collection:
     def __iter__(self):
         """ Allows using the collection as an iterable """
         yield from self.artworks
+
+    def __add__(self, other: "Collection") -> "Collection":
+        """Combine two collections: the artworks of `self`, then those of `other`.
+
+        Duplicates are kept. The result has no single source file or parser, so
+        its `raw` and `adapter` are None; each artwork keeps its own `raw` and
+        `museum`.
+        """
+        if not isinstance(other, Collection): # Only Collections can be added
+            return NotImplemented
+        both_artworks = self.artworks + other.artworks
+        return Collection(raw = None, adapter = None, artworks = both_artworks)
 
     def as_jsonl(self, file):
         """Export the collection as a jsonl file, one artwork per line.
@@ -195,10 +209,10 @@ class Collection:
         Returns
         -------
         Collection
-            Collection with ``raw="Multiple"`` and ``adapter=None``. The artworks
+            Collection with ``raw=None`` and ``adapter=None``. The artworks
             are plain `Artwork` objects, not source-specific subclasses.
         """
         with open(file, 'r', encoding='utf-8') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
-        return cls(raw="Multiple", adapter=None, artworks=artworks)
+        return cls(raw=None, adapter=None, artworks=artworks)

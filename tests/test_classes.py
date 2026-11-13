@@ -62,7 +62,7 @@ def test_rkd_parses_known_artwork(rkd_path):
 def test_collection_jsonl_round_trip(example_artwork, tmp_path):
     """Exporting a collection to jsonl and importing it back gives the same artworks."""
     second_artwork = replace(example_artwork, id="P000002", title="Las Hilanderas")
-    collection = Collection(raw="Multiple", adapter=None, artworks=[example_artwork, second_artwork])
+    collection = Collection(raw=None, adapter=None, artworks=[example_artwork, second_artwork])
 
     file = tmp_path / "collection.jsonl" # tmp_path: fresh temporary folder from pytest
     collection.as_jsonl(file)
@@ -86,11 +86,31 @@ def test_collection_prado_not_implemented(prado_path):
 
 def test_collection_equality(example_artwork):
     """Collections are equal only if their fields, artworks included, are equal."""
-    collection = Collection(raw="Multiple", adapter=None, artworks=[example_artwork])
-    same = Collection(raw="Multiple", adapter=None, artworks=[example_artwork])
-    empty = Collection(raw="Multiple", adapter=None, artworks=[])
+    collection = Collection(raw=None, adapter=None, artworks=[example_artwork])
+    same = Collection(raw=None, adapter=None, artworks=[example_artwork])
+    empty = Collection(raw=None, adapter=None, artworks=[])
     assert collection == same
     assert collection != empty
+
+
+def test_collection_add(example_artwork):
+    """Adding collections keeps all artworks in order, duplicates included, with no single source."""
+    second_artwork = replace(example_artwork, id="P000002")
+    first = Collection(raw="first.xml", adapter=None, artworks=[example_artwork])
+    second = Collection(raw="second.xml", adapter=None, artworks=[second_artwork, example_artwork])
+
+    combined = first + second
+
+    assert [a.id for a in combined] == ["P000001", "P000002", "P000001"] # Order kept, duplicate kept
+    assert combined.raw is None and combined.adapter is None
+    assert [a.id for a in first] == ["P000001"] # The originals are left unchanged
+
+
+def test_collection_add_non_collection_raises(example_artwork):
+    """Adding something that is not a Collection gives Python's standard TypeError."""
+    collection = Collection(raw=None, adapter=None, artworks=[example_artwork])
+    with pytest.raises(TypeError):
+        collection + 3
 
 
 @pytest.mark.skipif(IN_GITHUB_ACTIONS, reason="Source file only available locally")
