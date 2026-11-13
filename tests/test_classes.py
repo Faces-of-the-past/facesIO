@@ -36,7 +36,7 @@ def test_init_rkd_collection(rkd_path):
     collection = Collection(rkd_path, adapter="RKD") # Load from example file
 
     # Perform quick test on the imported data
-    assert collection.raw == rkd_path
+    assert collection.raw == {str(rkd_path)} # Read from the artworks: one source file
     assert isinstance(collection.artworks, list)
     assert all(isinstance(a, Artwork) for a in collection.artworks)
 
@@ -94,16 +94,30 @@ def test_collection_equality(example_artwork):
 
 
 def test_collection_add(example_artwork):
-    """Adding collections keeps all artworks in order, duplicates included, with no single source."""
-    second_artwork = replace(example_artwork, id="P000002")
-    first = Collection(raw="first.xml", adapter=None, artworks=[example_artwork])
-    second = Collection(raw="second.xml", adapter=None, artworks=[second_artwork, example_artwork])
+    """Adding collections keeps all artworks in order, duplicates included, and all source files."""
+    from_first = replace(example_artwork, raw="first.xml")
+    from_second = replace(example_artwork, id="P000002", raw="second.xml")
+    first = Collection(raw=None, adapter=None, artworks=[from_first])
+    second = Collection(raw=None, adapter=None, artworks=[from_second, example_artwork]) # example_artwork: raw=None
 
     combined = first + second
 
     assert [a.id for a in combined] == ["P000001", "P000002", "P000001"] # Order kept, duplicate kept
-    assert combined.raw is None and combined.adapter is None
+    assert combined.raw == {"first.xml", "second.xml"} # Unknown source (None) left out
+    assert combined.adapter is None
     assert [a.id for a in first] == ["P000001"] # The originals are left unchanged
+
+
+def test_collection_raw_follows_artworks(example_artwork):
+    """`raw` is computed from the artworks, so it can't go out of date."""
+    collection = Collection(raw=None, adapter=None, artworks=[])
+    assert collection.raw == set()
+
+    collection.artworks.append(replace(example_artwork, raw="late.xml"))
+    assert collection.raw == {"late.xml"}
+
+    with pytest.raises(AttributeError): # Read-only: it can't be set by hand
+        collection.raw = "other.xml"
 
 
 def test_collection_add_non_collection_raises(example_artwork):
