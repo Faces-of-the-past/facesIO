@@ -2,8 +2,8 @@
 
 Each museum / archive gets its own `Artwork` subclass (e.g. `ArtworkRKD`),
 responsible for parsing one record of that source's native format into the
-common `Artwork` fields. A `Collection` reads a whole source file and picks the
-right subclass through its `adapter` argument.
+common `Artwork` fields. `Collection.from_source(source, museum)` reads a whole
+export and picks the right subclass through its `museum` argument.
 
 See UML diagram at docs/classes.png
 
@@ -111,104 +111,64 @@ class Sitter(Artwork):
 
 @dataclass
 class Collection:
-    """A collection of artworks, read from a source file or a jsonl export.
+    """A collection of artworks.
+
+    Build it in one of three ways:
+
+    - ``Collection(artworks)``: from ready-made artworks.
+    - ``Collection.from_source(source, museum)``: by parsing a museum's export.
+    - ``Collection.from_jsonl(file)``: from a jsonl file written by `as_jsonl`.
 
     Parameters
     ----------
-    source : str or None
-        Where to read the artworks from (e.g. the path of a file). Not stored:
-        the `sources` attribute is computed from the artworks instead.
-        Ignored (use None) when `artworks` is given.
-    adapter : str or None, optional
-        Which parser to use: ``"RKD"`` (default) or ``"Prado"`` (not implemented
-        yet). Ignored when `artworks` is given.
-    artworks : list[Artwork], optional
-        Ready-made artworks. If given, nothing is parsed (this is what
-        `from_jsonl` uses).
-
-    Raises
-    ------
-    ValueError
-        If `adapter` is not a known parser and no `artworks` are given.
-    NotImplementedError
-        If `adapter` is ``"Prado"``.
+    artworks : iterable of Artwork
+        Artworks in the collection. Stored as a new list, so the caller's list
+        (or generator) is not shared.
 
     Attributes
     ----------
-    sources : set[str]
-        Sources of the artworks, computed from the artworks themselves
-        (read-only). One file for a collection parsed from a file, several
-        after `+`. Empty if no artwork knows its source.
-    adapter : str or None
-        The parser used, see Parameters. None when nothing was parsed.
     artworks : list[Artwork]
         Artworks contained in the collection.
+    sources : set[str]
+        Sources of the artworks (read-only, computed from the artworks).
+    museums : set[str]
+        Museums of the artworks (read-only, computed from the artworks).
     """
 
-    # Declared so the dataclass can build __eq__ from them.
-    # __init__ and __repr__ are our own (a dataclass keeps hand-written ones).
-    # `sources` is not a field: it's a property computed from `artworks`, see below.
-    adapter: str | None
+    # The dataclass writes __init__(self, artworks) and __eq__ from it.
+    # __repr__ is our own (a dataclass keeps hand-written ones).
+    # `sources` and `museums` are not fields: they're properties computed from `artworks`, see below.
     artworks: list[Artwork]
 
-    def __init__(self, source : str | None, adapter : str | None = 'RKD', artworks : list[Artwork] | None = None):
-        self.adapter = adapter
+    def __post_init__(self):
+        """Run by the generated __init__: store the artworks as a new list."""
+        self.artworks = list(self.artworks)
 
-        # Ready-made artworks: nothing to parse
-        if artworks is not None:
-            self.artworks = list(artworks)
-            return
-
-        # Otherwise, choose the right parser
-        if adapter == "RKD":
-            self.artworks = [ArtworkRKD(record) for record in iter_rkd_records(source)]
-        elif adapter == "Prado":
-            raise NotImplementedError("The Prado parser is not implemented yet")
-        else:
-            raise ValueError(f"Unknown adapter {adapter!r}: use 'RKD' or 'Prado', or pass `artworks`")
-
-    @property # Read like an attribute (collection.sources), lazy-evaluated on each access
-    def sources(self) -> set[str]:
-        """Source files used for building this collection. Artworks with unknown source (source=None) are left out.
-
-        The sources are relevant both at an Artwork and at a Collection level. This way, we store them only once """
-        return {artwork.source for artwork in self.artworks if artwork.source is not None}
-
-    def __repr__(self) -> str:
-        """Short description: number of artworks, source files and parser (the list itself is too long).
-
-        Written in angle brackets, Python's convention for a repr that is not a constructor call.
-        """
-        return f"<Collection: {len(self.artworks)} artworks from {self.sources!r}, adapter={self.adapter!r}>"
-
-    def __iter__(self):
-        """ Allows using the collection as an iterable """
-        yield from self.artworks
-
-    def __add__(self, other: "Collection") -> "Collection":
-        """Combine two collections: the artworks of `self`, then those of `other`.
-
-        Duplicates are kept. The result's `sources` holds the sources of both
-        collections; its `adapter` is None, since no single parser was used.
-        """
-        if not isinstance(other, Collection): # Only Collections can be added
-            return NotImplemented # TODO: create a more transparent exception
-
-        both_artworks = self.artworks + other.artworks
-        return Collection(source = None, adapter = None, artworks = both_artworks)
-
-    def as_jsonl(self, file):
-        """Export the collection as a jsonl file, one artwork per line.
+    # =========== Alternative constructors ===========
+    @classmethod # Like staticmethod, but inheritable
+    def from_source(cls, source, museum: str = "RKD") -> Self:
+        """Read a collection from a museum's export, with that museum's parser.
 
         Parameters
         ----------
-        file : str or Path
-            Output path. An existing file is overwritten.
-        """
-        lines = [artwork.as_jsonl_line() for artwork in self.artworks]
+        source : str or Path
+            Where to read the artworks from (e.g. the path of a file).
+        museum : str, optional
+            Which museum the export comes from, and so which parser to use:
+            ``"RKD"`` (default) or ``"Prado"`` (not implemented yet).
 
-        with open(file, 'w', encoding='utf-8') as f: # TODO: this might overwrite valid files
-            f.writelines(lines)
+        Raises
+        ------
+        ValueError
+            If `museum` has no parser.
+        NotImplementedError
+            If `museum` is ``"Prado"``.
+        """
+        if museum == "RKD":
+            return cls([ArtworkRKD(record) for record in iter_rkd_records(source)])
+        if museum == "Prado":
+            raise NotImplementedError("The Prado parser is not implemented yet")
+        raise ValueError(f"Unknown museum {museum!r}: use 'RKD' or 'Prado'")
 
     @classmethod # Like staticmethod, but inheritable
     def from_jsonl(cls, file) -> Self:
@@ -222,11 +182,62 @@ class Collection:
         Returns
         -------
         Collection
-            Collection with ``adapter=None``. Its `sources` gives the original
-            sources, as stored in each artwork. The artworks are plain
-            `Artwork` objects, not source-specific subclasses.
+            Its `sources` and `museums` give the original ones, as stored in
+            each artwork. The artworks are plain `Artwork` objects, not
+            museum-specific subclasses.
         """
         with open(file, 'r', encoding='utf-8') as f:
             artworks = [Artwork.from_jsonl_line(line) for line in f.readlines()]
 
-        return cls(source=None, adapter=None, artworks=artworks)
+        return cls(artworks)
+
+    # =========== Properties ===========
+    @property # Read like an attribute (collection.museums), lazy-evaluated on each access
+    def museums(self) -> set[str]:
+        """Museums the artworks come from. Artworks with unknown museum (museum=None) are left out.
+
+        A Collection can come from multiple museums."""
+        return {artwork.museum for artwork in self.artworks if artwork.museum is not None}
+
+    @property # Read like an attribute (collection.sources), lazy-evaluated on each access
+    def sources(self) -> set[str]:
+        """Source files used for building this collection. Artworks with unknown source (source=None) are left out.
+
+        A Collection can come from multiple sources.
+        The sources are relevant both at an Artwork and at a Collection level. This way, we store them only once """
+        return {artwork.source for artwork in self.artworks if artwork.source is not None}
+
+    def __repr__(self) -> str:
+        """Short description: number of artworks, museums and sources (the list itself is too long).
+
+        Written in angle brackets, Python's convention for a repr that is not a constructor call.
+        """
+        return f"<Collection: {len(self.artworks)} artworks from museums {self.museums!r}, sources {self.sources!r}>"
+
+    def __iter__(self):
+        """ Allows using the collection as an iterable """
+        yield from self.artworks
+
+    def __add__(self, other: "Collection") -> "Collection":
+        """Combine two collections: the artworks of `self`, then those of `other`.
+
+        Duplicates are kept. The result's `sources` and `museums` hold those of
+        both collections.
+        """
+        if not isinstance(other, Collection): # Only Collections can be added
+            return NotImplemented # TODO: create a more transparent exception
+
+        return Collection(self.artworks + other.artworks)
+
+    def as_jsonl(self, file):
+        """Export the collection as a jsonl file, one artwork per line.
+
+        Parameters
+        ----------
+        file : str or Path
+            Output path. An existing file is overwritten.
+        """
+        lines = [artwork.as_jsonl_line() for artwork in self.artworks]
+
+        with open(file, 'w', encoding='utf-8') as f: # TODO: this might overwrite valid files
+            f.writelines(lines)
