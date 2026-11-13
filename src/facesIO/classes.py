@@ -166,11 +166,6 @@ class Collection:
         else:
             raise ValueError(f"Unknown adapter {adapter!r}: use 'RKD' or 'Prado', or pass `artworks`")
 
-
-    def set_artworks(self, artworks):
-        """Replace the collection's artworks with `artworks` (a list of `Artwork`)."""
-        self.artworks = artworks
-
     def __iter__(self):
         """ Allows using the collection as an iterable """
         yield from self.artworks
