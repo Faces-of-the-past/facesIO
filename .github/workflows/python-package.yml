@@ -3,7 +3,7 @@ name: Python Package installation and tests
 on: [push]
 
 jobs:
-  build-linux:
+  install-poetry-and-test:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
