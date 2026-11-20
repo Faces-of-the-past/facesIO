@@ -1,3 +1,8 @@
+[![Build](https://github.com/Faces-of-the-past/facesIO/actions/workflows/python-package.yml/badge.svg)](https://github.com/Faces-of-the-past/facesIO/actions/workflows/python-package.yml)
+[![Coverage](https://codecov.io/gh/Faces-of-the-past/facesIO/graph/badge.svg)](https://codecov.io/gh/Faces-of-the-past/facesIO)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+
 From the point of view of data management, this project has two challenges ahead:
 
 1. A classic data acquisition problem: digesting data from different sources (RKD's collection, Prado's collection, ...)
