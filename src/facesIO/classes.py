@@ -107,12 +107,12 @@ class ArtworkPrado(Artwork):
         self.id = "TODO:"
         self.title = "Soon we'll implement a Prado parser"
 
-class Sitter(Artwork):
+class Face(Artwork):
     sitter_id: str
     sitter_image: str
 
     def __init__(self) -> None:
-        raise NotImplementedError("The Sitter parser is not implemented yet")
+        raise NotImplementedError("The Face parser is not implemented yet")
 
 @dataclass
 class Collection:
