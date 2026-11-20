@@ -54,9 +54,14 @@ class Artwork:
     sitter_ids: list[str] = None
     source: str = None
 
+    @property
+    def uid(self) -> str:
+        """ Unique-id """
+        return f"{self.museum}-{self.id}"
+
     def __str__(self) -> str:
         """ Human-friendly name """
-        return f"{self.museum}-{self.id} : {self.title}"
+        return f"{self.uid} : {self.title}"
 
     def as_dict(self) -> dict:
         """ Returns the artwork as a dictionary """
