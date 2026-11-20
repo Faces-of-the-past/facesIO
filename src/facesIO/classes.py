@@ -234,6 +234,12 @@ class Collection:
 
         return Collection(self.artworks + other.artworks)
 
+    def deduplicate(self) -> "Collection":
+        """ Remove duplicate records
+
+        Duplication can happen easily when two collections are added """
+        raise NotImplementedError("Function not yet implemented")
+
     def as_jsonl(self, file):
         """Export the collection as a jsonl file, one artwork per line.
 
