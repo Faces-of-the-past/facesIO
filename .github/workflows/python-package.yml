@@ -1,4 +1,4 @@
-name: Python Package using Poetry
+name: Python Package installation and tests
 
 on: [push]
 
@@ -28,3 +28,27 @@ jobs:
         files: coverage.xml
         token: ${{ secrets.CODECOV_TOKEN }} # Set in GitHub: Settings > Secrets and variables > Actions
         fail_ci_if_error: false # A Codecov hiccup shouldn't turn the build red
+
+  # Install the package the way users without Poetry would, and test that copy
+  install-pip:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+    - name: Install the package with pip
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install .  # Builds the package from pyproject.toml and installs it into site-packages
+    - name: Import the installed package
+      run: |
+        # Run from a temporary folder, so only the installed copy can be found
+        cd "$RUNNER_TEMP"
+        python -c "import facesIO.classes, facesIO.parsers; print('Imported from', facesIO.classes.__file__)"
+    - name: Test the installed package
+      run: |
+        python -m pip install pytest  # Dev tools are a Poetry group, so pip doesn't install them
+        python -m pytest
